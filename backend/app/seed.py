@@ -2,7 +2,7 @@
 import random
 from datetime import date, timedelta
 
-from .database import Base, SessionLocal, engine
+from .database import Base, SessionLocal, engine, ensure_schema
 from .models import Allocation, Employee, EmployeeSkill, Project, ProjectRequirement, RoleRate, Skill
 from .services.analytics import compute_rate
 
@@ -155,6 +155,7 @@ def months_ago(n: int) -> date:
 
 def run(reset: bool = True) -> None:
     """reset=True drops and recreates all tables first (local use); False only inserts."""
+    ensure_schema()
     if reset:
         Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)

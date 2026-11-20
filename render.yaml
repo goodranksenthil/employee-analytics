@@ -1,15 +1,9 @@
 # Render Blueprint — FastAPI backend + managed PostgreSQL (same layout as cip-platform).
 # Render → New → Blueprint → pick this repo. Secrets marked `sync: false` are asked for once.
-# Database: Render Postgres (free plan expires after 30 days; upgrade or switch to Supabase).
+# Database: shares the existing free Render Postgres `cip-db` (Render allows one free database
+# per workspace). All tables live in their own schema (DB_SCHEMA), so CIP's tables are untouched.
+# cip-db's free plan expires after 30 days; upgrade it or point DATABASE_URL elsewhere.
 # See docs/DEPLOY.md.
-databases:
-  - name: employee-analytics-db
-    plan: free
-    region: singapore
-    databaseName: employee_analytics
-    user: ea
-    postgresMajorVersion: "16"
-    ipAllowList: []            # no public access; only Render services in this workspace connect
 
 services:
   - type: web
@@ -24,11 +18,13 @@ services:
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
-      # Render-managed Postgres, wired in automatically — no password is typed anywhere.
+      # Render-managed Postgres (cip-db), wired in automatically — no password is typed anywhere.
       - key: DATABASE_URL
         fromDatabase:
-          name: employee-analytics-db
+          name: cip-db
           property: connectionString
+      - key: DB_SCHEMA
+        value: employee_analytics
       # Comma-separated Vercel production URL(s), e.g. https://employee-analytics.vercel.app
       - key: CORS_ORIGINS
         sync: false

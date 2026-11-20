@@ -5,13 +5,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, select
 
-from .database import Base, SessionLocal, engine
+from .database import Base, SessionLocal, engine, ensure_schema
 from .models import Employee
 from .routers import billing, dashboard, employees, pipeline, projects, talent
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    ensure_schema()
     Base.metadata.create_all(bind=engine)
     # Cloud deploys: load sample data into an empty database on first start (never overwrites).
     if os.getenv("SEED_DEMO_DATA", "false").lower() == "true":

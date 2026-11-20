@@ -7,21 +7,21 @@ Same setup as cip-platform.
     │
     └──── /api/* (CORS) ──▶ Render web service (FastAPI, Docker)
                                  │
-                                 └──▶ Render Postgres 16 (employee-analytics-db)
+                                 └──▶ Render Postgres 16 (cip-db, schema employee_analytics)
 ```
 
 | Piece | Where | Config |
 |---|---|---|
 | React UI | **Vercel** | [`vercel.json`](../vercel.json) — Vite build, `frontend/dist`, SPA routing, security headers |
 | FastAPI | **Render** (Docker web service) | [`render.yaml`](../render.yaml), [`backend/Dockerfile`](../backend/Dockerfile) |
-| PostgreSQL 16 | **Render Postgres** | Created by the blueprint; `DATABASE_URL` is wired in automatically. The free database expires after 30 days — upgrade it or point `DATABASE_URL` at Supabase |
+| PostgreSQL 16 | **Render Postgres `cip-db`** (shared) | Render allows one free database per workspace, so this app reuses cip-db. `DATABASE_URL` is wired in from it automatically and every table lives in the `employee_analytics` schema (`DB_SCHEMA`), so CIP's tables are never touched. The free database expires after 30 days — upgrade it or point `DATABASE_URL` elsewhere |
 
 Put the code in a GitHub repository first; Render and Vercel deploy from it.
 
 ## 1. Render (API + database)
 
 1. <https://dashboard.render.com> → **New → Blueprint** → connect the repository. Render reads
-   `render.yaml` and proposes `employee-analytics-db` and `employee-analytics-api`.
+   `render.yaml` and proposes `employee-analytics-api` (connected to the existing `cip-db`).
 2. Secrets it asks for:
 
    | Variable | Value |
