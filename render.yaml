@@ -1,0 +1,40 @@
+# Render Blueprint — FastAPI backend + managed PostgreSQL (same layout as cip-platform).
+# Render → New → Blueprint → pick this repo. Secrets marked `sync: false` are asked for once.
+# Database: Render Postgres (free plan expires after 30 days; upgrade or switch to Supabase).
+# See docs/DEPLOY.md.
+databases:
+  - name: employee-analytics-db
+    plan: free
+    region: singapore
+    databaseName: employee_analytics
+    user: ea
+    postgresMajorVersion: "16"
+    ipAllowList: []            # no public access; only Render services in this workspace connect
+
+services:
+  - type: web
+    name: employee-analytics-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    buildFilter:
+      paths: ["backend/**"]   # frontend-only commits don't redeploy the API
+    region: singapore
+    plan: free                 # sleeps after 15 min idle; see .github/workflows/keep-awake.yml
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Render-managed Postgres, wired in automatically — no password is typed anywhere.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: employee-analytics-db
+          property: connectionString
+      # Comma-separated Vercel production URL(s), e.g. https://employee-analytics.vercel.app
+      - key: CORS_ORIGINS
+        sync: false
+      # Optional, for Vercel preview deployments, e.g. ^https://employee-analytics-[a-z0-9-]+\.vercel\.app$
+      - key: CORS_ORIGIN_REGEX
+        sync: false
+      # Load the sample employees/projects into an empty database on first start.
+      - key: SEED_DEMO_DATA
+        value: "true"
