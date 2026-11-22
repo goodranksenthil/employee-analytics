@@ -4,8 +4,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from ..auth import current_user, permissions_of, require, scrub
 from ..database import get_db
-from ..models import Allocation, Project
+from ..models import Allocation, Project, User
 from ..schemas import AllocationIn
 from ..services import analytics as an
 from ..services.matching import score_employee
@@ -18,7 +19,12 @@ def list_employees(
     status: Optional[str] = None,  # bench | allocated | partial | full
     search: Optional[str] = None,
     db: Session = Depends(get_db),
+    user: User = Depends(require("resources:view")),
 ):
+    return scrub(_list_employees(status, search, db), user)
+
+
+def _list_employees(status: Optional[str], search: Optional[str], db: Session):
     card = an.rate_card(db)
     items = [an.employee_summary(e, card) for e in an.load_employees(db)]
     status_map = {
@@ -43,7 +49,14 @@ def list_employees(
 
 
 @router.get("/employees/{employee_id}")
-def get_employee(employee_id: int, db: Session = Depends(get_db)):
+def get_employee(employee_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    # Resource viewers see anyone; an employee login sees only its own record.
+    if "resources:view" not in permissions_of(user) and user.employee_id != employee_id:
+        raise HTTPException(403, "You can only view your own profile")
+    return scrub(_get_employee(employee_id, db), user)
+
+
+def _get_employee(employee_id: int, db: Session):
     emp = an.load_employee(db, employee_id)
     if not emp:
         raise HTTPException(404, "Employee not found")
@@ -102,7 +115,11 @@ def get_employee(employee_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/bench")
-def bench(db: Session = Depends(get_db)):
+def bench(db: Session = Depends(get_db), user: User = Depends(require("bench:view"))):
+    return scrub(_bench(db), user)
+
+
+def _bench(db: Session):
     card = an.rate_card(db)
     projects = [p for p in an.load_projects(db) if p.status in ("Active", "Pipeline")]
     open_by_project = {p.id: [r for r in an.requirement_rows(p) if r["open"] > 0] for p in projects}
@@ -128,7 +145,7 @@ def bench(db: Session = Depends(get_db)):
     return result
 
 
-@router.post("/allocations", status_code=201)
+@router.post("/allocations", status_code=201, dependencies=[Depends(require("projects:manage"))])
 def create_allocation(body: AllocationIn, db: Session = Depends(get_db)):
     emp = an.load_employee(db, body.employee_id)
     project = db.get(Project, body.project_id)
@@ -155,7 +172,7 @@ def create_allocation(body: AllocationIn, db: Session = Depends(get_db)):
     return {"id": alloc.id, "bill_rate": rate}
 
 
-@router.delete("/allocations/{allocation_id}")
+@router.delete("/allocations/{allocation_id}", dependencies=[Depends(require("projects:manage"))])
 def release_allocation(allocation_id: int, db: Session = Depends(get_db)):
     alloc = db.get(Allocation, allocation_id)
     if not alloc:

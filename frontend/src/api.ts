@@ -3,11 +3,22 @@ import { useCallback, useEffect, useState } from "react";
 // Local dev: empty → Vite proxies /api. Vercel: VITE_API_BASE_URL = Render URL (no trailing slash).
 const BASE = `${((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "").replace(/\/$/, "")}/api`;
 
+// Set by the auth provider: the signed-in user's token, and what to do when it expires.
+let authToken: string | null = null;
+let onUnauthorized: (() => void) | null = null;
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
+export function setUnauthorizedHandler(fn: (() => void) | null) {
+  onUnauthorized = fn;
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: init?.body instanceof FormData ? init?.headers : { "Content-Type": "application/json", ...init?.headers },
-  });
+  const headers = new Headers(init?.headers);
+  if (!(init?.body instanceof FormData)) headers.set("Content-Type", "application/json");
+  if (authToken) headers.set("Authorization", `Bearer ${authToken}`);
+  const res = await fetch(`${BASE}${path}`, { ...init, headers });
+  if (res.status === 401 && authToken && !path.startsWith("/auth/login")) onUnauthorized?.();
   if (!res.ok) {
     let detail = res.statusText;
     try {

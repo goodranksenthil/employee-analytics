@@ -3,14 +3,20 @@ from collections import Counter
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from ..auth import require, scrub
 from ..database import get_db
+from ..models import User
 from ..services import analytics as an
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 @router.get("/summary")
-def summary(db: Session = Depends(get_db)):
+def summary(db: Session = Depends(get_db), user: User = Depends(require("dashboard:view"))):
+    return scrub(_summary(db), user)
+
+
+def _summary(db: Session):
     card = an.rate_card(db)
     projects = [an.project_summary(p) for p in an.load_projects(db)]
     employees = [an.employee_summary(e, card) for e in an.load_employees(db)]

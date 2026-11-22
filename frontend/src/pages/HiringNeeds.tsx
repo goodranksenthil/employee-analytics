@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useSafeNavigate as useNavigate } from "../auth";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useApi } from "../api";
 import type { HiringNeeds as HN } from "../types";

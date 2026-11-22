@@ -16,40 +16,57 @@ import {
   Users,
   CircleDollarSign,
   CircleOff,
+  LogOut,
+  UserRound,
 } from "lucide-react";
+import { useAuth, type Permission } from "../auth";
 
-type NavItem = { to: string; label: string; icon: ElementType; end?: boolean };
+type NavItem = { to: string; label: string; icon: ElementType; end?: boolean; perm: Permission };
 
 const NAV: { section: string; items: NavItem[] }[] = [
-  { section: "Overview", items: [{ to: "/", label: "Dashboard", icon: LayoutDashboard, end: true }] },
+  {
+    section: "Overview",
+    items: [
+      { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, perm: "dashboard:view" },
+      { to: "/me", label: "My Profile", icon: UserRound, perm: "self:view" },
+    ],
+  },
   {
     section: "Projects",
     items: [
-      { to: "/projects", label: "All Projects", icon: FolderKanban, end: true },
-      { to: "/projects?billable=true", label: "Billable", icon: CircleDollarSign },
-      { to: "/pipeline", label: "Pipeline", icon: CalendarClock },
-      { to: "/projects?billable=false", label: "Non-Billable", icon: CircleOff },
+      { to: "/projects", label: "All Projects", icon: FolderKanban, end: true, perm: "projects:view" },
+      { to: "/projects?billable=true", label: "Billable", icon: CircleDollarSign, perm: "projects:view" },
+      { to: "/pipeline", label: "Pipeline", icon: CalendarClock, perm: "pipeline:view" },
+      { to: "/projects?billable=false", label: "Non-Billable", icon: CircleOff, perm: "projects:view" },
     ],
   },
   {
     section: "Resources",
     items: [
-      { to: "/resources", label: "Resources", icon: Users },
-      { to: "/bench", label: "Bench", icon: Armchair },
+      { to: "/resources", label: "Resources", icon: Users, perm: "resources:view" },
+      { to: "/bench", label: "Bench", icon: Armchair, perm: "bench:view" },
     ],
   },
   {
     section: "Talent",
     items: [
-      { to: "/matching", label: "Skill Matching", icon: Sparkles },
-      { to: "/hiring", label: "Hiring Needs", icon: UserPlus },
+      { to: "/matching", label: "Skill Matching", icon: Sparkles, perm: "matching:use" },
+      { to: "/hiring", label: "Hiring Needs", icon: UserPlus, perm: "hiring:view" },
     ],
   },
-  { section: "Finance", items: [{ to: "/billing", label: "Billing & Rates", icon: BadgeDollarSign }] },
+  { section: "Finance", items: [{ to: "/billing", label: "Billing & Rates", icon: BadgeDollarSign, perm: "billing:view" }] },
 ];
+
+const ROLE_TONE: Record<string, string> = {
+  employee: "slate",
+  delivery_manager: "blue",
+  finance: "green",
+  hr: "violet",
+};
 
 const TITLES: Record<string, string> = {
   "": "Dashboard",
+  me: "My Profile",
   projects: "Projects",
   pipeline: "Pipeline",
   resources: "Resources",
@@ -66,6 +83,14 @@ export default function Layout() {
   const navigate = useNavigate();
   const parts = loc.pathname.split("/").filter(Boolean);
   const section = TITLES[parts[0] ?? ""] ?? "Dashboard";
+  const { user, can, logout } = useAuth();
+  const nav = NAV.map((g) => ({ ...g, items: g.items.filter((i) => can(i.perm)) })).filter((g) => g.items.length);
+  const initials = (user?.full_name ?? "?")
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   // Query-string nav items (billable filters) need a custom active check.
   const isActive = (item: NavItem) => {
@@ -90,7 +115,7 @@ export default function Layout() {
           )}
         </div>
         <nav>
-          {NAV.map((group) => (
+          {nav.map((group) => (
             <div key={group.section} className="nav-group">
               {!collapsed && <div className="nav-section">{group.section}</div>}
               {group.items.map((item) => {
@@ -122,21 +147,40 @@ export default function Layout() {
             <span className="crumb-sep">/</span>
             <span>{section}</span>
           </div>
-          <form
-            className="search"
-            onSubmit={(e) => {
-              e.preventDefault();
-              navigate(`/resources?search=${encodeURIComponent(q)}`);
-            }}
-          >
-            <Search size={16} />
-            <input placeholder="Search employees, skills, roles…" value={q} onChange={(e) => setQ(e.target.value)} />
-          </form>
+          {can("resources:view") ? (
+            <form
+              className="search"
+              onSubmit={(e) => {
+                e.preventDefault();
+                navigate(`/resources?search=${encodeURIComponent(q)}`);
+              }}
+            >
+              <Search size={16} />
+              <input placeholder="Search employees, skills, roles…" value={q} onChange={(e) => setQ(e.target.value)} />
+            </form>
+          ) : (
+            <div className="search-spacer" />
+          )}
           <div className="topbar-right">
             <button className="icon-btn" aria-label="Notifications">
               <Bell size={18} />
             </button>
-            <div className="avatar">RM</div>
+            <div className="user-chip">
+              <div className="avatar">{initials}</div>
+              <div className="user-meta">
+                <div className="user-name">{user?.full_name}</div>
+                <span className={`badge tone-${ROLE_TONE[user?.role ?? ""] ?? "slate"}`}>{user?.role_label}</span>
+              </div>
+            </div>
+            <button
+              className="btn btn-ghost btn-sm signout"
+              onClick={() => {
+                logout();
+                navigate("/login", { replace: true });
+              }}
+            >
+              <LogOut size={14} /> Sign out
+            </button>
           </div>
         </header>
         <main className="content">

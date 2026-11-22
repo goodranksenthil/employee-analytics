@@ -19,8 +19,9 @@ export interface EmployeeSummary {
   is_billable: boolean;
   skills: SkillRef[];
   projects: { id: number; name: string; is_billable: boolean; allocation_pct: number }[];
-  hourly_rate: number;
-  monthly_billing: number;
+  // Billing fields are omitted by the API for roles without money:view (HR, Employee).
+  hourly_rate?: number;
+  monthly_billing?: number;
 }
 
 export interface BenchEmployee extends EmployeeSummary {
@@ -43,7 +44,7 @@ export interface RateBreakdown {
 export interface EmployeeDetail extends EmployeeSummary {
   join_date: string;
   skills_detail: { skill_id: number; name: string; category: string; proficiency: number; years: number }[];
-  rate: RateBreakdown;
+  rate?: RateBreakdown;
   allocations: {
     id: number;
     project_id: number;
@@ -52,8 +53,8 @@ export interface EmployeeDetail extends EmployeeSummary {
     client: string;
     is_billable: boolean;
     allocation_pct: number;
-    bill_rate: number;
-    monthly_billing: number;
+    bill_rate?: number;
+    monthly_billing?: number;
     start_date: string;
     end_date: string | null;
     active: boolean;
@@ -154,7 +155,7 @@ export interface DashboardSummary {
     utilization_pct: number;
     by_role: Record<string, number>;
   };
-  billing: {
+  billing?: {
     monthly_revenue: number;
     annual_run_rate: number;
     avg_hourly_rate: number;

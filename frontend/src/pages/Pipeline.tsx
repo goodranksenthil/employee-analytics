@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useSafeNavigate as useNavigate } from "../auth";
 import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CalendarClock, ChevronDown, ChevronUp, CircleDollarSign, Layers, TrendingUp, UserPlus, Users } from "lucide-react";
 import { compactUsd, useApi, usd } from "../api";

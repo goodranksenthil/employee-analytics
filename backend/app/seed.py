@@ -3,7 +3,8 @@ import random
 from datetime import date, timedelta
 
 from .database import Base, SessionLocal, engine, ensure_schema
-from .models import Allocation, Employee, EmployeeSkill, Project, ProjectRequirement, RoleRate, Skill
+from .auth import hash_password
+from .models import Allocation, Employee, EmployeeSkill, Project, ProjectRequirement, RoleRate, Skill, User
 from .services.analytics import compute_rate
 
 rng = random.Random(42)
@@ -131,6 +132,33 @@ PIPELINE_META = {
     "PRJ-1012": (60, 45, 12),
     "PRJ-1013": (40, 90, 18),
 }
+
+
+# Demo logins shown on the login screen: username, password, display name, role.
+# The employee login is linked to the first seeded employee (EMP1001).
+DEMO_USERS = [
+    ("employee", "Employee@123", None, "employee"),
+    ("delivery", "Delivery@123", "Delivery Manager (demo)", "delivery_manager"),
+    ("finance", "Finance@123", "Finance (demo)", "finance"),
+    ("hr", "Hr@12345", "HR (demo)", "hr"),
+]
+
+
+def ensure_demo_users(db) -> int:
+    """Create the 4 demo logins if no users exist yet. Returns how many were created."""
+    if db.query(User).count():
+        return 0
+    emp = db.query(Employee).filter(Employee.emp_code == "EMP1001").first()
+    for username, password, name, role in DEMO_USERS:
+        db.add(User(
+            username=username,
+            password_hash=hash_password(password),
+            full_name=name or (emp.full_name if emp else "Demo Employee"),
+            role=role,
+            employee_id=emp.id if (role == "employee" and emp) else None,
+        ))
+    db.commit()
+    return len(DEMO_USERS)
 
 
 def role_for(track: str, years: float) -> str:
@@ -264,8 +292,9 @@ def run(reset: bool = True) -> None:
                               bill_rate=compute_rate(e, card)["hourly_rate"] if p.is_billable else 0,
                               start_date=end - timedelta(days=rng.randint(90, 240)), end_date=end))
         db.commit()
+        users = ensure_demo_users(db)
         bench = sum(1 for v in util.values() if v == 0)
-        print(f"Seeded {len(employees)} employees, {len(PROJECTS)} projects, {bench} on bench.")
+        print(f"Seeded {len(employees)} employees, {len(PROJECTS)} projects, {bench} on bench, {users} demo logins.")
     finally:
         db.close()
 

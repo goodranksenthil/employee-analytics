@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { api, useApi, usd } from "../api";
+import { useAuth, useSafeNavigate } from "../auth";
 import type { ProjectDetail as PD } from "../types";
 import { BillableBadge, Card, ErrorState, Kpi, Loading, PageHeader, Score, SkillChip, StatusBadge } from "../components/ui";
 
 export default function ProjectDetail() {
   const { id } = useParams();
-  const nav = useNavigate();
+  const nav = useSafeNavigate();
+  const manage = useAuth().can("projects:manage");
   const { data, loading, error, reload } = useApi<PD>(`/projects/${id}`);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -91,7 +93,7 @@ export default function ProjectDetail() {
                     <td className="num">{t.allocation_pct}%</td>
                     <td className="num">{t.bill_rate ? `${usd(t.bill_rate)}/hr` : "—"}</td>
                     <td className="num">{t.monthly_billing ? usd(t.monthly_billing) : "—"}</td>
-                    <td className="num"><button className="btn btn-ghost btn-sm" onClick={() => release(t.allocation_id)}>Release</button></td>
+                    <td className="num">{manage && <button className="btn btn-ghost btn-sm" onClick={() => release(t.allocation_id)}>Release</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -121,9 +123,11 @@ export default function ProjectDetail() {
                   <td><div className="chips">{c.missing.map((m) => <SkillChip key={m} name={m} missing />)}</div></td>
                   <td className="num"><Score value={c.score} /></td>
                   <td className="num">
-                    <button className="btn btn-primary btn-sm" onClick={() => assign(c.employee_id, Math.min(c.available_pct, 100))}>
-                      Assign {c.available_pct}%
-                    </button>
+                    {manage && (
+                      <button className="btn btn-primary btn-sm" onClick={() => assign(c.employee_id, Math.min(c.available_pct, 100))}>
+                        Assign {c.available_pct}%
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

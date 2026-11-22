@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApi, usd } from "../api";
+import { useAuth } from "../auth";
 import type { EmployeeSummary } from "../types";
 import { BillableBadge, Card, Empty, ErrorState, Kpi, Loading, Meter, PageHeader, SkillChip, StatusBadge, Tabs } from "../components/ui";
 
@@ -11,6 +12,8 @@ export default function Resources() {
   const [filter, setFilter] = useState<F>("all");
   const q = params.get("search") ?? "";
   const nav = useNavigate();
+  const { can } = useAuth();
+  const money = can("money:view");
   const { data, loading, error, reload } = useApi<EmployeeSummary[]>("/employees");
 
   const rows = useMemo(() => {
@@ -80,7 +83,7 @@ export default function Resources() {
                   <th>Assigned Projects</th>
                   <th>Utilization</th>
                   <th>Status</th>
-                  <th className="num">Rate</th>
+                  {money && <th className="num">Rate</th>}
                 </tr>
               </thead>
               <tbody>
@@ -117,7 +120,7 @@ export default function Resources() {
                       <div className="sub">{e.utilization}%</div>
                     </td>
                     <td><StatusBadge status={e.status} /></td>
-                    <td className="num">{usd(e.hourly_rate)}/hr</td>
+                    {money && <td className="num">{usd(e.hourly_rate ?? 0)}/hr</td>}
                   </tr>
                 ))}
               </tbody>

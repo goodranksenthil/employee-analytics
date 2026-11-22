@@ -6,6 +6,22 @@ derived from role, experience and skills.
 
 **Stack:** React + TypeScript + Vite · Python + FastAPI · PostgreSQL
 
+## Logins & role-based access
+
+The login screen lists these demo accounts (created on first start when `SEED_DEMO_DATA=true`):
+
+| Role | Username | Password | Can see |
+|---|---|---|---|
+| Employee | `employee` | `Employee@123` | **My Profile** only — own skills, assignments, best-fit projects (no billing figures) |
+| Delivery Manager | `delivery` | `Delivery@123` | Dashboard, projects, pipeline, resources, bench, skill matching, hiring; can assign/release people |
+| Finance | `finance` | `Finance@123` | Dashboard, projects, pipeline, **Billing & Rates** (can edit the rate card) |
+| HR | `hr` | `Hr@12345` | Dashboard, resources & skills, bench, skill matching, hiring — billing figures hidden |
+
+Access is enforced by the API, not just the menu: every endpoint checks the role's permissions
+(`backend/app/auth.py`), returns 403 otherwise, and strips rates/billing fields from responses for
+roles without `money:view`. Passwords are stored as PBKDF2 hashes; sessions use signed JWTs
+(`SECRET_KEY`, 8-hour expiry). These are demo accounts — change the passwords before real data.
+
 ## Pages (left menu)
 
 | Menu | What it shows |

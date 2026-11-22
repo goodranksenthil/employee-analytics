@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..auth import current_user, require
 from ..database import get_db
 from ..models import Skill
 from ..services import analytics as an
@@ -15,7 +16,7 @@ router = APIRouter(tags=["talent"])
 AVAILABLE_THRESHOLD = 50  # an employee with >= 50% free capacity counts as available supply
 
 
-@router.get("/skills")
+@router.get("/skills", dependencies=[Depends(current_user)])
 def list_skills(db: Session = Depends(get_db)):
     return [
         {"id": s.id, "name": s.name, "category": s.category, "premium_rate": s.premium_rate}
@@ -23,7 +24,7 @@ def list_skills(db: Session = Depends(get_db)):
     ]
 
 
-@router.get("/matching/project/{project_id}")
+@router.get("/matching/project/{project_id}", dependencies=[Depends(require("matching:use"))])
 def match_project(project_id: int, only_available: bool = False, db: Session = Depends(get_db)):
     project = next((p for p in an.load_projects(db) if p.id == project_id), None)
     if not project:
@@ -39,7 +40,7 @@ def match_project(project_id: int, only_available: bool = False, db: Session = D
     }
 
 
-@router.post("/matching/document")
+@router.post("/matching/document", dependencies=[Depends(require("matching:use"))])
 async def match_document(
     file: Optional[UploadFile] = File(None),
     text: Optional[str] = Form(None),
@@ -62,7 +63,7 @@ async def match_document(
     return {"source": source, "requirements": reqs, "matches": rank(employees, reqs)}
 
 
-@router.get("/hiring-needs")
+@router.get("/hiring-needs", dependencies=[Depends(require("hiring:view"))])
 def hiring_needs(db: Session = Depends(get_db)):
     """Open positions on Active/Pipeline projects and how many must be hired after using bench supply."""
     employees = an.load_employees(db)

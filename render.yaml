@@ -31,6 +31,9 @@ services:
       # Optional, for Vercel preview deployments, e.g. ^https://employee-analytics-[a-z0-9-]+\.vercel\.app$
       - key: CORS_ORIGIN_REGEX
         sync: false
-      # Load the sample employees/projects into an empty database on first start.
+      # Signs login tokens. Render generates a random value once; changing it signs everyone out.
+      - key: SECRET_KEY
+        generateValue: true
+      # Load the sample employees/projects and the 4 demo logins into an empty database on first start.
       - key: SEED_DEMO_DATA
         value: "true"

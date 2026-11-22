@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Armchair, BadgeDollarSign, FolderKanban, Gauge, UserPlus, Users } from "lucide-react";
 import { compactUsd, useApi, usd } from "../api";
+import { useAuth, type Permission } from "../auth";
 import type { DashboardSummary } from "../types";
 import { Card, ErrorState, Kpi, Loading, PageHeader, SkillChip } from "../components/ui";
 
@@ -9,10 +10,22 @@ const C = { blue: "#2563eb", violet: "#7c3aed", green: "#16a34a", amber: "#d9770
 
 export default function Dashboard() {
   const { data, loading, error, reload } = useApi<DashboardSummary>("/dashboard/summary");
-  const nav = useNavigate();
+  const navigate = useNavigate();
+  const { can } = useAuth();
   if (loading) return <Loading />;
   if (error || !data) return <ErrorState message={error ?? ""} onRetry={reload} />;
   const { projects: p, resources: r, billing: b } = data;
+
+  // Only link a card to a page this role can open.
+  const PAGE_PERM: Record<string, Permission> = {
+    "/projects": "projects:view", "/resources": "resources:view", "/bench": "bench:view",
+    "/billing": "billing:view", "/hiring": "hiring:view",
+  };
+  const linkTo = (to: string) => {
+    const perm = PAGE_PERM[`/${to.split(/[?/]/).filter(Boolean)[0] ?? ""}`];
+    return !perm || can(perm) ? () => navigate(to) : undefined;
+  };
+  const nav = (to: string) => linkTo(to)?.();
 
   const projectMix = [
     { name: "Billable", value: p.billable, color: C.blue },
@@ -32,14 +45,18 @@ export default function Dashboard() {
       <PageHeader title="Resource Dashboard" subtitle="Organization-wide view of projects, people, bench and billing." />
 
       <div className="kpi-grid">
-        <Kpi label="Total Projects" value={p.total} hint={`${p.active} active`} icon={<FolderKanban size={18} />} onClick={() => nav("/projects")} />
-        <Kpi label="Billable Projects" value={p.billable} hint={`${Math.round((p.billable / Math.max(p.total, 1)) * 100)}% of portfolio`} icon={<BadgeDollarSign size={18} />} tone="green" onClick={() => nav("/projects?billable=true")} />
-        <Kpi label="Non-Billable Projects" value={p.non_billable} hint="Internal & pre-sales" icon={<FolderKanban size={18} />} tone="violet" onClick={() => nav("/projects?billable=false")} />
-        <Kpi label="Total Resources" value={r.total} hint={`${r.allocated} allocated · ${r.billable} billable`} icon={<Users size={18} />} tone="slate" onClick={() => nav("/resources")} />
-        <Kpi label="On Bench" value={r.bench} hint={`${Math.round((r.bench / Math.max(r.total, 1)) * 100)}% of workforce`} icon={<Armchair size={18} />} tone="red" onClick={() => nav("/bench")} />
+        <Kpi label="Total Projects" value={p.total} hint={`${p.active} active`} icon={<FolderKanban size={18} />} onClick={linkTo("/projects")} />
+        <Kpi label="Billable Projects" value={p.billable} hint={`${Math.round((p.billable / Math.max(p.total, 1)) * 100)}% of portfolio`} icon={<BadgeDollarSign size={18} />} tone="green" onClick={linkTo("/projects?billable=true")} />
+        <Kpi label="Non-Billable Projects" value={p.non_billable} hint="Internal & pre-sales" icon={<FolderKanban size={18} />} tone="violet" onClick={linkTo("/projects?billable=false")} />
+        <Kpi label="Total Resources" value={r.total} hint={`${r.allocated} allocated · ${r.billable} billable`} icon={<Users size={18} />} tone="slate" onClick={linkTo("/resources")} />
+        <Kpi label="On Bench" value={r.bench} hint={`${Math.round((r.bench / Math.max(r.total, 1)) * 100)}% of workforce`} icon={<Armchair size={18} />} tone="red" onClick={linkTo("/bench")} />
         <Kpi label="Utilization" value={`${r.utilization_pct}%`} hint={`${r.partial} partially allocated`} icon={<Gauge size={18} />} tone="amber" />
-        <Kpi label="Monthly Billing" value={compactUsd(b.monthly_revenue)} hint={`${compactUsd(b.annual_run_rate)} annual run-rate`} icon={<BadgeDollarSign size={18} />} tone="green" onClick={() => nav("/billing")} />
-        <Kpi label="Open Positions" value={p.open_positions} hint="Across active & pipeline" icon={<UserPlus size={18} />} tone="blue" onClick={() => nav("/hiring")} />
+        {b ? (
+          <Kpi label="Monthly Billing" value={compactUsd(b.monthly_revenue)} hint={`${compactUsd(b.annual_run_rate)} annual run-rate`} icon={<BadgeDollarSign size={18} />} tone="green" onClick={linkTo("/billing")} />
+        ) : (
+          <Kpi label="Fully Allocated" value={r.fully_allocated} hint={`${r.allocated} on projects`} icon={<Users size={18} />} tone="green" />
+        )}
+        <Kpi label="Open Positions" value={p.open_positions} hint="Across active & pipeline" icon={<UserPlus size={18} />} tone="blue" onClick={linkTo("/hiring")} />
       </div>
 
       <div className="grid-3">
@@ -57,26 +74,30 @@ export default function Dashboard() {
                 <strong>{v}</strong>
               </li>
             ))}
-            <li>
-              <span>Avg. hourly rate</span>
-              <strong>{usd(b.avg_hourly_rate)}</strong>
-            </li>
+            {b && (
+              <li>
+                <span>Avg. hourly rate</span>
+                <strong>{usd(b.avg_hourly_rate)}</strong>
+              </li>
+            )}
           </ul>
         </Card>
       </div>
 
-      <div className="grid-2">
-        <Card title="Monthly Billing by Project">
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={b.by_project} layout="vertical" margin={{ left: 10, right: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
-              <XAxis type="number" tickFormatter={(v: number) => compactUsd(v)} fontSize={12} />
-              <YAxis type="category" dataKey="name" width={170} fontSize={12} />
-              <Tooltip formatter={(v) => usd(Number(v))} />
-              <Bar dataKey="revenue" fill={C.blue} radius={[0, 4, 4, 0]} barSize={16} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+      <div className={b ? "grid-2" : ""}>
+        {b && (
+          <Card title="Monthly Billing by Project">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={b.by_project} layout="vertical" margin={{ left: 10, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+                <XAxis type="number" tickFormatter={(v: number) => compactUsd(v)} fontSize={12} />
+                <YAxis type="category" dataKey="name" width={170} fontSize={12} />
+                <Tooltip formatter={(v) => usd(Number(v))} />
+                <Bar dataKey="revenue" fill={C.blue} radius={[0, 4, 4, 0]} barSize={16} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+        )}
         <Card title="Resources by Role">
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={roles} margin={{ bottom: 50 }}>
@@ -91,7 +112,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid-2">
-        <Card title="Bench Skills Available" actions={<a className="link" onClick={() => nav("/bench")}>View bench →</a>}>
+        <Card title="Bench Skills Available" actions={can("bench:view") && <a className="link" onClick={() => nav("/bench")}>View bench →</a>}>
           {data.bench_by_skill.length === 0 ? (
             <p className="muted">Nobody is on the bench.</p>
           ) : (
@@ -106,7 +127,7 @@ export default function Dashboard() {
           <table className="table compact">
             <tbody>
               {data.recent_bench.map((e) => (
-                <tr key={e.id} className="row-link" onClick={() => nav(`/resources/${e.id}`)}>
+                <tr key={e.id} className={can("resources:view") ? "row-link" : ""} onClick={() => nav(`/resources/${e.id}`)}>
                   <td>
                     <div className="name">{e.full_name}</div>
                     <div className="sub">{e.role}</div>

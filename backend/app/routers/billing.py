@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..auth import require
 from ..database import get_db
 from ..models import RoleRate
 from ..schemas import RoleRateIn
 from ..services import analytics as an
 
-router = APIRouter(prefix="/billing", tags=["billing"])
+router = APIRouter(prefix="/billing", tags=["billing"], dependencies=[Depends(require("billing:view"))])
 
 
 @router.get("/rate-card")
@@ -23,7 +24,7 @@ def get_rate_card(db: Session = Depends(get_db)):
     ]
 
 
-@router.put("/rate-card/{role}")
+@router.put("/rate-card/{role}", dependencies=[Depends(require("billing:edit"))])
 def update_rate(role: str, body: RoleRateIn, db: Session = Depends(get_db)):
     rr = db.scalars(select(RoleRate).where(RoleRate.role == role)).first()
     if not rr:

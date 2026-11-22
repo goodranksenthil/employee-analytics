@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useSafeNavigate as useNavigate } from "../auth";
 import { FileUp } from "lucide-react";
 import { api, useApi } from "../api";
 import type { MatchResponse, ProjectSummary } from "../types";

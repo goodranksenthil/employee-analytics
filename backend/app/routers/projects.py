@@ -3,11 +3,12 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from ..auth import require
 from ..database import get_db
 from ..services import analytics as an
 from ..services.matching import rank
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+router = APIRouter(prefix="/projects", tags=["projects"], dependencies=[Depends(require("projects:view"))])
 
 
 @router.get("")

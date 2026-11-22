@@ -5,11 +5,12 @@ from datetime import date
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from ..auth import require
 from ..database import get_db
 from ..services import analytics as an
 from ..services.matching import score_employee
 
-router = APIRouter(prefix="/pipeline", tags=["pipeline"])
+router = APIRouter(prefix="/pipeline", tags=["pipeline"], dependencies=[Depends(require("pipeline:view"))])
 
 AVAILABLE_THRESHOLD = 50
 FORECAST_MONTHS = 12

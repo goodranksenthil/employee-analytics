@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useSafeNavigate as useNavigate } from "../auth";
 import { api, useApi, usd } from "../api";
 import { BillableBadge, Card, ErrorState, Kpi, Loading, PageHeader, Tabs } from "../components/ui";
 

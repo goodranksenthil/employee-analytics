@@ -7,6 +7,23 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 
 
+class User(Base):
+    """Login account. role is one of: employee, delivery_manager, finance, hr."""
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(80), unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    full_name: Mapped[str] = mapped_column(String(120))
+    role: Mapped[str] = mapped_column(String(30))
+    # For the employee role: which employee record this login belongs to.
+    employee_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("employees.id", ondelete="SET NULL"), nullable=True
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
 class Skill(Base):
     __tablename__ = "skills"
 

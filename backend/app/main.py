@@ -7,25 +7,27 @@ from sqlalchemy import func, select
 
 from .database import Base, SessionLocal, engine, ensure_schema
 from .models import Employee
-from .routers import billing, dashboard, employees, pipeline, projects, talent
+from .routers import auth, billing, dashboard, employees, pipeline, projects, talent
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     ensure_schema()
     Base.metadata.create_all(bind=engine)
-    # Cloud deploys: load sample data into an empty database on first start (never overwrites).
+    # Demo deploys: load sample data and the 4 demo logins into an empty database (never overwrites).
     if os.getenv("SEED_DEMO_DATA", "false").lower() == "true":
+        from .seed import ensure_demo_users, run
+
         with SessionLocal() as db:
             empty = db.scalar(select(func.count()).select_from(Employee)) == 0
         if empty:
-            from .seed import run
-
             run(reset=False)
+        with SessionLocal() as db:
+            ensure_demo_users(db)
     yield
 
 
-app = FastAPI(title="Employee Analytics API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Employee Analytics API", version="1.1.0", lifespan=lifespan)
 
 origins = [o.strip().rstrip("/") for o in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if o.strip()]
 app.add_middleware(
@@ -36,7 +38,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for r in (dashboard.router, projects.router, pipeline.router, employees.router, talent.router, billing.router):
+for r in (auth.router, dashboard.router, projects.router, pipeline.router, employees.router, talent.router, billing.router):
     app.include_router(r, prefix="/api")
 
 
