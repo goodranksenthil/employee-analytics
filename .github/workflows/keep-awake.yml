@@ -1,7 +1,6 @@
 # Render's free web service sleeps after 15 minutes without traffic, so the first request
 # then takes ~1 minute. Pinging the health endpoint keeps it awake (one free instance running
 # all month fits inside Render's 750 free hours). Delete this once on a paid plan.
-# Replace the two URLs with your Render and Vercel URLs after the first deploy.
 name: keep-awake
 
 on:
@@ -17,6 +16,6 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Ping API health
-        run: curl --fail --silent --show-error --max-time 120 --retry 3 --retry-delay 20 https://employee-analytics-api.onrender.com/api/health
+        run: curl --fail --silent --show-error --max-time 120 --retry 3 --retry-delay 20 https://employee-analytics-api-tebl.onrender.com/api/health
       - name: Ping web app
-        run: curl --fail --silent --show-error --max-time 60 -o /dev/null https://employee-analytics.vercel.app/
+        run: curl --fail --silent --show-error --max-time 60 -o /dev/null https://employee-analytics-seven.vercel.app/

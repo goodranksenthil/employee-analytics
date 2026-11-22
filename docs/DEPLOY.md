@@ -2,6 +2,8 @@
 
 Same setup as cip-platform.
 
+**Live:** UI <https://employee-analytics-seven.vercel.app> · API <https://employee-analytics-api-tebl.onrender.com> ([docs](https://employee-analytics-api-tebl.onrender.com/docs))
+
 ```
  Browser ──▶ Vercel (React static site, CDN)
     │
