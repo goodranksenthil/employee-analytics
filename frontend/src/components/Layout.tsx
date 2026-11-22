@@ -18,6 +18,8 @@ import {
   CircleOff,
   LogOut,
   UserRound,
+  BriefcaseBusiness,
+  Inbox,
 } from "lucide-react";
 import { useAuth, type Permission } from "../auth";
 
@@ -29,6 +31,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, perm: "dashboard:view" },
       { to: "/me", label: "My Profile", icon: UserRound, perm: "self:view" },
+      { to: "/positions", label: "Open Positions", icon: BriefcaseBusiness, perm: "positions:view" },
     ],
   },
   {
@@ -52,6 +55,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
     items: [
       { to: "/matching", label: "Skill Matching", icon: Sparkles, perm: "matching:use" },
       { to: "/hiring", label: "Hiring Needs", icon: UserPlus, perm: "hiring:view" },
+      { to: "/applications", label: "Applications", icon: Inbox, perm: "applications:review" },
     ],
   },
   { section: "Finance", items: [{ to: "/billing", label: "Billing & Rates", icon: BadgeDollarSign, perm: "billing:view" }] },
@@ -67,6 +71,8 @@ const ROLE_TONE: Record<string, string> = {
 const TITLES: Record<string, string> = {
   "": "Dashboard",
   me: "My Profile",
+  positions: "Open Positions",
+  applications: "Applications",
   projects: "Projects",
   pipeline: "Pipeline",
   resources: "Resources",

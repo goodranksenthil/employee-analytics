@@ -1,7 +1,7 @@
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
 
-from sqlalchemy import Boolean, Date, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -118,6 +118,25 @@ class ProjectRequirement(Base):
 
     project: Mapped[Project] = relationship(back_populates="requirements")
     skill: Mapped[Skill] = relationship()
+
+
+class Application(Base):
+    """An employee applying for an open position (a project requirement)."""
+
+    __tablename__ = "applications"
+    __table_args__ = (UniqueConstraint("employee_id", "requirement_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id", ondelete="CASCADE"))
+    requirement_id: Mapped[int] = mapped_column(ForeignKey("project_requirements.id", ondelete="CASCADE"))
+    note: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(20), default="Applied")  # Applied | Shortlisted | Selected | Rejected
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    reviewed_by: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+
+    employee: Mapped[Employee] = relationship()
+    requirement: Mapped[ProjectRequirement] = relationship()
 
 
 class Allocation(Base):

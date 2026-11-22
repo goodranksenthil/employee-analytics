@@ -5,7 +5,8 @@ import { api, setAuthToken, setUnauthorizedHandler } from "./api";
 export type Permission =
   | "self:view" | "dashboard:view" | "projects:view" | "projects:manage" | "pipeline:view"
   | "resources:view" | "bench:view" | "matching:use" | "hiring:view"
-  | "billing:view" | "billing:edit" | "money:view";
+  | "billing:view" | "billing:edit" | "money:view"
+  | "positions:view" | "positions:apply" | "applications:review";
 
 export interface AuthUser {
   id: number;
@@ -96,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 const PATH_PERMS: [string, Permission][] = [
   ["/projects", "projects:view"], ["/pipeline", "pipeline:view"], ["/resources", "resources:view"],
   ["/bench", "bench:view"], ["/matching", "matching:use"], ["/hiring", "hiring:view"], ["/billing", "billing:view"],
+  ["/positions", "positions:view"], ["/applications", "applications:review"],
 ];
 
 /** Whether the signed-in role may open an in-app path (used to switch off links to pages it can't see). */

@@ -12,10 +12,13 @@ The login screen lists these demo accounts (created on first start when `SEED_DE
 
 | Role | Username | Password | Can see |
 |---|---|---|---|
-| Employee | `employee` | `Employee@123` | **My Profile** only — own skills, assignments, best-fit projects (no billing figures) |
-| Delivery Manager | `delivery` | `Delivery@123` | Dashboard, projects, pipeline, resources, bench, skill matching, hiring; can assign/release people |
+| Employee | `employee` | `Employee@123` | **My Profile** (own skills, assignments) and **Open Positions**: every opening with its technology stack, required level/experience and the employee's fit; **Apply** with a note, track status, withdraw (no billing figures) |
+| Delivery Manager | `delivery` | `Delivery@123` | Dashboard, projects, pipeline, resources, bench, skill matching, hiring, **Applications** review; can assign/release people |
 | Finance | `finance` | `Finance@123` | Dashboard, projects, pipeline, **Billing & Rates** (can edit the rate card) |
-| HR | `hr` | `Hr@12345` | Dashboard, resources & skills, bench, skill matching, hiring — billing figures hidden |
+| HR | `hr` | `Hr@12345` | Dashboard, resources & skills, bench, skill matching, hiring, **Applications** review — billing figures hidden |
+
+Applications move through **Applied → Shortlisted → Selected / Rejected**. Delivery Managers and HR
+decide on the Applications page; employees can withdraw while an application is Applied or Shortlisted.
 
 Access is enforced by the API, not just the menu: every endpoint checks the role's permissions
 (`backend/app/auth.py`), returns 403 otherwise, and strips rates/billing fields from responses for

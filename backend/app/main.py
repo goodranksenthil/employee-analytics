@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 
 from .database import Base, SessionLocal, engine, ensure_schema
 from .models import Employee
-from .routers import auth, billing, dashboard, employees, pipeline, projects, talent
+from .routers import auth, billing, dashboard, employees, pipeline, positions, projects, talent
 
 
 @asynccontextmanager
@@ -38,7 +38,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for r in (auth.router, dashboard.router, projects.router, pipeline.router, employees.router, talent.router, billing.router):
+for r in (auth.router, dashboard.router, projects.router, pipeline.router, employees.router, talent.router, billing.router, positions.router):
     app.include_router(r, prefix="/api")
 
 

@@ -62,6 +62,10 @@ const STATUS_TONE: Record<string, string> = {
   Pipeline: "blue",
   "On Hold": "amber",
   Completed: "slate",
+  Applied: "blue",
+  Shortlisted: "amber",
+  Selected: "green",
+  Rejected: "red",
 };
 
 export function Badge({ children, tone }: { children: ReactNode; tone?: string }) {

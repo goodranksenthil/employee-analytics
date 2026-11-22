@@ -29,9 +29,9 @@ PBKDF2_ITERATIONS = 200_000
 ROLES: dict = {
     "employee": {
         "label": "Employee",
-        "description": "Own profile: skills, project assignments and best-fit projects",
+        "description": "Own profile, open positions with technologies, and applying for them",
         "home": "/me",
-        "permissions": {"self:view"},
+        "permissions": {"self:view", "positions:view", "positions:apply"},
     },
     "delivery_manager": {
         "label": "Delivery Manager",
@@ -40,6 +40,7 @@ ROLES: dict = {
         "permissions": {
             "dashboard:view", "projects:view", "projects:manage", "pipeline:view",
             "resources:view", "bench:view", "matching:use", "hiring:view", "money:view",
+            "applications:review",
         },
     },
     "finance": {
@@ -57,6 +58,7 @@ ROLES: dict = {
         "home": "/resources",
         "permissions": {
             "dashboard:view", "resources:view", "bench:view", "matching:use", "hiring:view",
+            "applications:review",
         },
     },
 }

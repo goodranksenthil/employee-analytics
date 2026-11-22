@@ -13,6 +13,8 @@ import Bench from "./pages/Bench";
 import SkillMatching from "./pages/SkillMatching";
 import HiringNeeds from "./pages/HiringNeeds";
 import Billing from "./pages/Billing";
+import OpenPositions from "./pages/OpenPositions";
+import Applications from "./pages/Applications";
 
 function Home() {
   const { user, can } = useAuth();
@@ -50,6 +52,8 @@ export default function App() {
         <Route path="matching" element={<RequirePerm perms={["matching:use"]}><SkillMatching /></RequirePerm>} />
         <Route path="hiring" element={<RequirePerm perms={["hiring:view"]}><HiringNeeds /></RequirePerm>} />
         <Route path="billing" element={<RequirePerm perms={["billing:view"]}><Billing /></RequirePerm>} />
+        <Route path="positions" element={<RequirePerm perms={["positions:view"]}><OpenPositions /></RequirePerm>} />
+        <Route path="applications" element={<RequirePerm perms={["applications:review"]}><Applications /></RequirePerm>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

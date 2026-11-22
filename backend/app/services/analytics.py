@@ -183,6 +183,7 @@ def requirement_rows(project: Project) -> List[dict]:
                 "id": r.id,
                 "skill_id": r.skill_id,
                 "skill": r.skill.name,
+                "category": r.skill.category,
                 "role": r.role,
                 "headcount": r.headcount,
                 "min_proficiency": r.min_proficiency,

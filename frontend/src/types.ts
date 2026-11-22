@@ -241,6 +241,61 @@ export interface PipelineResponse {
   forecast: { month: string; weighted: number; full: number }[];
 }
 
+export type ApplicationStatus = "Applied" | "Shortlisted" | "Selected" | "Rejected";
+
+export interface OpenPosition {
+  requirement_id: number;
+  project: {
+    id: number;
+    code: string;
+    name: string;
+    client: string;
+    status: string;
+    start_date: string;
+    description: string;
+    is_billable: boolean;
+    technologies: string[];
+  };
+  skill: string;
+  category: string;
+  role: string;
+  openings: number;
+  headcount: number;
+  min_proficiency: number;
+  min_experience: number;
+  applicants: number;
+  fit: { score: number; my_level: number | null; meets_level: boolean; meets_experience: boolean };
+  my_application: { id: number; status: ApplicationStatus; applied_at: string } | null;
+}
+
+export interface PositionsResponse {
+  employee: { id: number; full_name: string; role: string; years_experience: number; available_pct: number };
+  positions: OpenPosition[];
+}
+
+export interface ApplicationRow {
+  id: number;
+  status: ApplicationStatus;
+  note: string;
+  applied_at: string;
+  updated_at: string;
+  reviewed_by: string | null;
+  employee: { id: number; emp_code: string; full_name: string; role: string; years_experience: number; available_pct: number };
+  position: {
+    requirement_id: number;
+    skill: string;
+    role: string;
+    min_proficiency: number;
+    min_experience: number;
+    project_id: number;
+    project: string;
+    code: string;
+    client: string;
+    project_status: string;
+  };
+  fit: { score: number; level: number | null };
+}
+
 export interface MatchResponse {
   source: string;
   requirements: Requirement[];
