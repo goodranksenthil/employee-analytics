@@ -7,11 +7,11 @@ import { useAuth } from "../auth";
 const DEMO = [
   {
     username: "employee", password: "Employee@123", label: "Employee", icon: UserRound, tone: "slate",
-    sees: "My profile: skills, project assignments, best-fit projects",
+    sees: "My profile (skills, assignments) and open positions: view tech stack and apply",
   },
   {
     username: "delivery", password: "Delivery@123", label: "Delivery Manager", icon: Briefcase, tone: "blue",
-    sees: "Dashboard, projects, pipeline, resources, bench, allocation, matching, hiring",
+    sees: "Dashboard, projects, pipeline, resources, bench, allocation, matching, hiring, applications",
   },
   {
     username: "finance", password: "Finance@123", label: "Finance", icon: BadgeDollarSign, tone: "green",
@@ -19,7 +19,7 @@ const DEMO = [
   },
   {
     username: "hr", password: "Hr@12345", label: "HR", icon: UsersRound, tone: "violet",
-    sees: "Dashboard, employees & skills, bench, matching, hiring (no billing figures)",
+    sees: "Dashboard, employees & skills, bench, matching, hiring, applications (no billing figures)",
   },
 ] as const;
 
