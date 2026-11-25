@@ -13,11 +13,74 @@ export function setUnauthorizedHandler(fn: (() => void) | null) {
   onUnauthorized = fn;
 }
 
+// The hosted API (Render free plan) sleeps after ~15 idle minutes and takes up to a minute to
+// wake. While it wakes, the proxy answers 502/503 without CORS headers, which the browser
+// reports as "Failed to fetch". So: wait for /health to answer, then retry the request once.
+const WAKE_TIMEOUT_MS = 90_000;
+const GATEWAY_ERRORS = new Set([502, 503, 504]);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+let waking: Promise<boolean> | null = null;
+
+async function healthOk(): Promise<boolean> {
+  try {
+    const res = await fetch(`${BASE}/health`, { cache: "no-store" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Resolves true once the API answers /health (shared by concurrent callers), false on timeout. */
+export function wakeServer(): Promise<boolean> {
+  if (!waking) {
+    waking = (async () => {
+      const deadline = Date.now() + WAKE_TIMEOUT_MS;
+      for (let delay = 1000; Date.now() < deadline; delay = Math.min(delay * 2, 8000)) {
+        if (await healthOk()) return true;
+        await sleep(delay);
+      }
+      return false;
+    })().finally(() => {
+      waking = null;
+    });
+  }
+  return waking;
+}
+
+// Keep the hosted API awake while someone has the app open and visible.
+const HEARTBEAT_MS = 4 * 60_000;
+if (typeof window !== "undefined") {
+  void healthOk(); // start waking it as soon as the app loads (e.g. on the login page)
+  setInterval(() => {
+    if (document.visibilityState === "visible") void healthOk();
+  }, HEARTBEAT_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") void healthOk();
+  });
+}
+
+const UNREACHABLE =
+  "Can't reach the server. It may be starting up; please try again in a minute.";
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (!(init?.body instanceof FormData)) headers.set("Content-Type", "application/json");
   if (authToken) headers.set("Authorization", `Bearer ${authToken}`);
-  const res = await fetch(`${BASE}${path}`, { ...init, headers });
+  const send = () => fetch(`${BASE}${path}`, { ...init, headers });
+
+  let res: Response;
+  try {
+    res = await send();
+    if (GATEWAY_ERRORS.has(res.status)) throw new Error("gateway");
+  } catch {
+    // Network failure or a sleeping server: wait for it to wake, then try once more.
+    if (!(await wakeServer())) throw new Error(UNREACHABLE);
+    try {
+      res = await send();
+    } catch {
+      throw new Error(UNREACHABLE);
+    }
+  }
   if (res.status === 401 && authToken && !path.startsWith("/auth/login")) onUnauthorized?.();
   if (!res.ok) {
     let detail = res.statusText;
